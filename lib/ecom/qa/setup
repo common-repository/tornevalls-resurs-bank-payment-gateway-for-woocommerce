@@ -1,0 +1,189 @@
+#!/bin/sh -eu
+
+if [ ! -d .git/hooks ]; then
+  echo "Error: Please run this script from the root of the repository."
+  exit 1;
+fi
+
+# Resolve PHP cmd.
+dockerCmd=""
+phpService=""
+phpCmd=""
+
+read -p "Enter path to website root directory within PHP container (no trailing slash): " dir
+read -p "Running PHP in Docker (y/n)?" localPhp
+case "$localPhp" in
+  y|Y ) read -p "Enter name of docker compose command (eg. docker compose or docker-compose): " dockerCmd; read -p "Enter name of php server (eg. php or phpfpm): " phpService; phpCmd="${dockerCmd} exec -w ${dir} -T ${phpService}";;
+  n|N ) read -p "Enter name of/path to php binary (eg. php): " php;;
+  * ) echo "Invalid response."; exit 1;;
+esac
+
+echo ""
+echo ""
+echo "--==( Setting up git pre-commit hook )==--"
+echo ""
+echo ""
+
+# Create git pre-commit hook file.
+HOOK_FILE=".git/hooks/pre-commit"
+
+if [ -f $HOOK_FILE ]; then
+  rm -f $HOOK_FILE
+fi
+
+touch $HOOK_FILE
+chmod +x $HOOK_FILE
+
+cat <<EOT >> $HOOK_FILE
+#!/usr/bin/env -S bash
+
+ERRORS=0
+
+echo "====================================================== ====="
+echo ""
+
+echo "==========================================================="
+echo "#                                                         #"
+echo "#             APPLYING AUTOMATIC ADJUSTMENTS              #"
+echo "#                                                         #"
+echo "==========================================================="
+echo ""
+
+SRC_FILES=""
+TEST_FILES=""
+
+for file in \$(git diff --name-only --cached)
+do
+  if [ "\$(echo \$file | cut -d/ -f1)" = "src" ]; then
+      SRC_FILES="\$SRC_FILES $dir/\$file"
+  elif [ "\$(echo \$file | cut -d/ -f1)" = "tests" ]; then
+      TEST_FILES="\$TEST_FILES $dir/\$file"
+  fi
+done
+
+if [ -n "\$SRC_FILES" ]; then
+  echo ""
+  echo ""
+  echo "---==( Automatically adjusting src files )==---"
+  echo ""
+  echo ""
+  echo "[APPLYING PSR-12 RULESET]"
+  echo ""
+  $phpCmd $dir/vendor/bin/phpcbf --extensions=php --standard=PSR12 \$SRC_FILES
+  echo ""
+  echo ""
+  echo "[APPLYING CUSTOM RULESET]"
+  echo ""
+  $phpCmd $dir/vendor/bin/phpcbf --extensions=php --standard=qa/phpcs/src.xml \$SRC_FILES
+fi
+
+if [ -n "\$TEST_FILES" ]; then
+  echo ""
+  echo ""
+  echo "---==( Automatically adjusting test files )==---"
+  echo ""
+  echo ""
+  echo "[APPLYING PSR-12 RULESET]"
+  echo ""
+  $phpCmd $dir/vendor/bin/phpcbf --extensions=php --standard=PSR12 \$TEST_FILES
+  echo ""
+  echo ""
+  echo "[APPLYING CUSTOM RULESET]"
+  echo ""
+  $phpCmd $dir/vendor/bin/phpcbf --extensions=php --standard=qa/phpcs/tests.xml \$TEST_FILES
+fi
+
+if [ -z "\$SRC_FILES\$TEST_FILES" ]; then
+  echo ""
+  echo ""
+  echo "No fixable errors found."
+  echo ""
+  echo ""
+fi
+
+echo ""
+echo ""
+echo "==========================================================="
+echo "#                                                         #"
+echo "#                  SCANNING SOURCE FILES                  #"
+echo "#                                                         #"
+echo "==========================================================="
+echo ""
+echo ""
+
+echo "---==( Executing PHPCS )==---"
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpcs --standard=PSR12 $dir/src; then
+  ERRORS=1
+fi
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpcs --extensions=php --standard=qa/phpcs/src.xml $dir/src; then
+  ERRORS=1
+fi
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpcs --extensions=phtml --standard=qa/phpcs/templates.xml $dir/src; then
+  ERRORS=1
+fi
+echo ""
+
+echo "---==( Executing PHPMD )==---"
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpmd $dir/src text $dir/qa/phpmd/src.xml; then
+  ERRORS=1
+fi
+echo ""
+
+echo "---==( Executing PHPStan )==---"
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpstan analyse -c $dir/qa/phpstan/phpstan.neon $dir/src; then
+  ERRORS=1
+fi
+echo ""
+
+echo ""
+echo ""
+echo "==========================================================="
+echo "#                                                         #"
+echo "#                   SCANNING TEST FILES                   #"
+echo "#                                                         #"
+echo "==========================================================="
+echo ""
+echo ""
+
+echo "---==( Executing PHPCS )==---"
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpcs --extensions=php --standard=PSR12 $dir/tests; then
+  ERRORS=1
+fi
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpcs --extensions=php --standard=qa/phpcs/tests.xml $dir/tests; then
+  ERRORS=1
+fi
+echo ""
+
+echo "---==( Executing PHPMD )==---"
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpmd $dir/tests text $dir/qa/phpmd/tests.xml; then
+  ERRORS=1
+fi
+echo ""
+
+echo "---==( Executing PHPStan )==---"
+echo ""
+if ! $phpCmd $dir/vendor/bin/phpstan analyse -c $dir/qa/phpstan/phpstan.neon $dir/tests; then
+  ERRORS=1
+fi
+echo ""
+
+if [ "\${ERRORS}" = "1" ]; then
+  exec < /dev/tty
+  read -p "Continue commit despite remaining errors? (y/n)?" continueCommit
+  case "\$continueCommit" in
+    y|Y ) exit 0;;
+    * ) echo "Aborting."; exit 1;;
+  esac
+fi
+EOT
+
+echo OK
+exit 0

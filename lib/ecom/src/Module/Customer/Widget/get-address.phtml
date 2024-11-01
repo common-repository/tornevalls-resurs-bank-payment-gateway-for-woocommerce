@@ -1,0 +1,412 @@
+<?php
+
+/**
+ * Copyright © Resurs Bank AB. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+declare(strict_types=1);
+
+use Resursbank\Ecom\Lib\Locale\Translator;
+use Resursbank\Ecom\Lib\Order\CustomerType;
+
+$customerTypeRadioName = 'rbCustomerWidgetGetAddressCustomerType';
+$radioNaturalId = 'rb-customer-widget-getAddress-customerType-natural';
+$radioLegalId = 'rb-customer-widget-getAddress-customerType-legal';
+$govIdInputId = 'rb-customer-widget-getAddress-input-govId';
+$btnFetchAddressId = 'rb-customer-widget-getAddress-btn-fetchAddress';
+$elErrorMessageId = 'rb-customer-widget-getAddress-message';
+$widgetFetchingClass = 'rb-customer-widget-getAddress-fetching';
+$inputErrorClass = 'rb-customer-widget-getAddress-message-error';
+?>
+
+<?php
+/** @var Resursbank\Ecom\Module\Customer\Widget\GetAddress $this */
+?>
+
+<div class="rb-customer-widget-getAddress">
+    <div class="rb-customer-widget-getAddress-customerType">
+        <label for="<?= $radioNaturalId ?>">
+            <input
+                type="radio"
+                id="<?= $radioNaturalId ?>"
+                name="<?= $customerTypeRadioName ?>"
+                value="<?= CustomerType::NATURAL->name ?>"
+            >
+            <span>
+                <?= Translator::translate(phraseId: 'customer-type-natural') ?>
+            </span>
+        </label>
+        <label for="<?= $radioLegalId ?>">
+            <input
+                type="radio"
+                id="<?= $radioLegalId ?>"
+                name="<?= $customerTypeRadioName ?>"
+                value="<?= CustomerType::LEGAL->name ?>"
+            >
+            <span>
+                <?= Translator::translate(phraseId: 'customer-type-legal') ?>
+            </span>
+        </label>
+    </div>
+    <div class="rb-customer-widget-getAddress-inputArea">
+        <input
+            type="text"
+            id="<?= $govIdInputId ?>"
+            value="<?= $this->govId ?>"
+        >
+        <button type="button" id="<?= $btnFetchAddressId ?>">
+            <span class="rb-customer-widget-getAddress-fetching-title">
+                <?= Translator::translate(phraseId: 'fetch-address') ?>
+            </span>
+            <span class="rb-customer-widget-getAddress-inputArea-fetching-icon">
+                <span class="rb-customer-widget-getAddress-inputArea-fetching-icon-shard"></span>
+                <span class="rb-customer-widget-getAddress-inputArea-fetching-icon-shard"></span>
+                <span class="rb-customer-widget-getAddress-inputArea-fetching-icon-shard"></span>
+            </span>
+        </button>
+    </div>
+    <div id="<?= $elErrorMessageId ?>"></div>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        const INIT_CUSTOMER_TYPE = '<?= $this->customerType->name ?>';
+        const URL_FETCH_ADDRESS = '<?= $this->fetchUrl ?>';
+        let CALLBACK_FETCH_ADDRESS;
+
+        try {
+            CALLBACK_FETCH_ADDRESS = <?= $this->jsCallback ?>;
+        } catch (e) {
+            if (e instanceof Error) {
+                console.error(
+                    'Resurs Bank GetAddress: JS callback was not found.\n\n',
+                    e
+                );
+            }
+        }
+
+        /** @type {HTMLInputElement[]} */
+        const CUSTOMER_TYPE_RADIOS = Array.from(document.getElementsByName(
+            '<?= $customerTypeRadioName ?>'
+        )).filter((radio) => radio instanceof HTMLInputElement);
+        const BTN_FETCH_ADDRESS = document.getElementById(
+            '<?= $btnFetchAddressId ?>'
+        );
+        const INPUT_GOV_ID = document.getElementById('<?= $govIdInputId ?>');
+        const EL_ERROR_MESSAGE = document.getElementById('<?= $elErrorMessageId ?>');
+        const EL_WIDGET = document.getElementsByClassName(
+            'rb-customer-widget-getAddress'
+        )[0];
+
+        /**
+         * @param {unknown} value
+         * @returns {boolean}
+         */
+        const isLegal = (value) =>
+            value === '<?= CustomerType::LEGAL->name ?>';
+
+        /**
+         * @param {unknown} value
+         * @returns {boolean}
+         */
+        const isNatural = (value) =>
+            value === '<?= CustomerType::NATURAL->name ?>';
+
+        /**
+         * @param {unknown} value
+         * @returns {boolean}
+         */
+        const isCustomerType = (value) => isLegal(value) || isNatural(value);
+
+        /**
+         * Validates an organisation number.
+         *
+         * @param {string} govId
+         * @returns {boolean}
+         */
+        const validateOrg = (govId) => {
+            const sweden = /^(16\d{2}|18\d{2}|19\d{2}|20\d{2}|\d{2})(\d{2})(\d{2})(\-|\+)?([\d]{4})$/;
+
+            return sweden.test(govId);
+        };
+
+        /**
+         * Validates an SSN.
+         *
+         * @param {string} ssn
+         * @returns {boolean}
+         */
+        const validateSsn = (ssn) => {
+            <?php // phpcs:ignore ?>
+            const sweden = /^(18\d{2}|19\d{2}|20\d{2}|\d{2})(0[1-9]|1[0-2])([0][1-9]|[1-2][0-9]|3[0-1])(\-|\+)?([\d]{4})$/;
+
+            return sweden.test(ssn);
+        };
+
+        /**
+         * @param {string} govId
+         * @param {"NATURAL"|"LEGAL"} customerType
+         * @returns {boolean}
+         */
+        const validateGovId = (govId, customerType) => {
+            let result = false;
+
+            if (govId !== '') {
+                if (isLegal(customerType)) {
+                    validateOrg(govId);
+                } else if (isNatural(customerType)) {
+                    validateSsn(govId)
+                }
+            }
+
+            return result;
+        }
+
+        /**
+         * @returns {HTMLInputElement | undefined}
+         */
+        const getCheckedRadio = (radios) => radios.find((radio) => radio.checked);
+
+        /**
+         * @param {HTMLInputElement | undefined} radio
+         * @returns {string|undefined}
+         */
+        const getRadioValue = (radio) => radio ? radio.value : undefined;
+
+        /**
+         * @returns {string|undefined}
+         */
+        const getCustomerType = () =>
+            getRadioValue(getCheckedRadio(CUSTOMER_TYPE_RADIOS));
+
+        /**
+         * @param {string} govId
+         * @param {string} customerType
+         * @return {Promise<Response>}
+         */
+        const fetchAddress = (govId, customerType) => {
+            setFetchAddressMessage('', false);
+            return fetch(URL_FETCH_ADDRESS, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ govId, customerType })
+            });
+        };
+
+        /**
+         * @param {Response} response
+         * @returns {Promise<any>|undefined}
+         */
+        const handleFetchAddressResponse = (response) => {
+            if (!response.ok) {
+                setFetchAddressMessage(
+                    "<?= Translator::translate(phraseId: 'get-address-server-error') ?>",
+                    true
+                );
+            } else {
+                return response.json();
+            }
+        };
+
+        /**
+         * @param {any} data
+         */
+        const handleFetchAddressData = (data) => {
+            if (typeof data === 'undefined') {
+                return;
+            }
+            if (data.error) {
+                if (data.error === 'Invalid POST data.') {
+                    setFetchAddressMessage(
+                        "<?= Translator::translate(phraseId: 'get-address-could-not-fetch-address') ?>",
+                        true
+                    );
+                }
+            } else if (typeof CALLBACK_FETCH_ADDRESS !== 'function') {
+                setFetchAddressMessage(
+                    "<?= Translator::translate(phraseId: 'get-address-no-callback-function') ?>",
+                    true
+                );
+            } else {
+                CALLBACK_FETCH_ADDRESS(data, getCustomerType());
+            }
+        };
+
+        /**
+         * @param {any} error
+         */
+        const handleFetchAddressFatalError = (error) => {
+            if (error instanceof Error) {
+                // @todo Handle network/JS errors.
+            }
+        }
+
+        /**
+         * @param {string} message
+         * @param {boolean} error
+         */
+        const setFetchAddressMessage = (message, error) => {
+            if (EL_ERROR_MESSAGE instanceof HTMLDivElement) {
+                EL_ERROR_MESSAGE.textContent = message;
+
+                if (error) {
+                    EL_ERROR_MESSAGE.classList.add('<?= $inputErrorClass ?>');
+                } else {
+                    EL_ERROR_MESSAGE.classList.remove('<?= $inputErrorClass ?>');
+                }
+            }
+        };
+
+        /**
+         * @param {boolean} valid
+         */
+        const setInputState = (valid) => {
+            if (INPUT_GOV_ID instanceof HTMLInputElement) {
+                if (valid) {
+                    INPUT_GOV_ID.classList.remove(
+                        'rb-customer-widget-getAddress-inputArea-error'
+                    );
+                } else {
+                    INPUT_GOV_ID.classList.add(
+                        'rb-customer-widget-getAddress-inputArea-error'
+                    );
+                }
+            }
+        };
+
+        /**
+         * @param {boolean} state
+         */
+        const disableWidget = (state) => {
+            const value = String(state);
+
+            if (state) {
+                INPUT_GOV_ID.setAttribute('disabled', '');
+                BTN_FETCH_ADDRESS.setAttribute('disabled', '');
+            } else {
+                INPUT_GOV_ID.removeAttribute('disabled');
+                BTN_FETCH_ADDRESS.removeAttribute('disabled');
+            }
+
+            CUSTOMER_TYPE_RADIOS.forEach((radio) => radio.disabled = state);
+        };
+
+        /**
+         * @param {boolean} state
+         */
+        const setWidgetFetchingState = (state) => {
+            if (state) {
+                EL_WIDGET.classList.add('<?= $widgetFetchingClass ?>');
+            } else {
+                EL_WIDGET.classList.remove('<?= $widgetFetchingClass ?>');
+            }
+        };
+
+        /**
+         * Stores a customer type value on the client.
+         *
+         * @param {string} value
+         */
+        const saveCustomerType = (value) =>
+            window.localStorage.setItem('rbGetAddressCustomerType', value);
+
+        /**
+         * Retrieves the stored customer type from the client.
+         *
+         * @returns {string|null}
+         */
+        const loadCustomerType = () =>
+            window.localStorage.getItem('rbGetAddressCustomerType');
+
+        /**
+         * =====================================================
+         * Init function for customer types.
+         * =====================================================
+         *
+         * Only meant to be called once.
+         * Only created for structuring purposes.
+         */
+        const InitCustomerType = () => {
+            const storedCustomerType = loadCustomerType();
+            const onCustomerTypeChange = (event) => {
+                const value = event.target.value;
+
+                setInputState(
+                    validateGovId(INPUT_GOV_ID.value, value)
+                );
+                saveCustomerType(value);
+            };
+
+            CUSTOMER_TYPE_RADIOS
+                .filter((radio) => radio instanceof HTMLInputElement && radio.type === 'radio')
+                .forEach((radio) => {
+                    if (radio.value === storedCustomerType ||
+                        radio.value === INIT_CUSTOMER_TYPE
+                    ) {
+                        radio.checked = true;
+                    }
+
+                    radio.addEventListener('change', onCustomerTypeChange);
+                });
+        };
+
+        /**
+         * =====================================================
+         * Init function for the government ID input.
+         * =====================================================
+         *
+         * Only meant to be called once.
+         * Only created for structuring purposes.
+         */
+        const InitGovIdInput = () => {
+            if (INPUT_GOV_ID instanceof HTMLInputElement && INPUT_GOV_ID.type === 'text') {
+                INPUT_GOV_ID.addEventListener('blur', () => {
+                    const value = INPUT_GOV_ID.value;
+                    const selectedCustomerType = getCustomerType();
+
+                    if (isCustomerType(selectedCustomerType)) {
+                        setInputState(validateGovId(value, selectedCustomerType));
+                    }
+                }, false);
+            }
+        };
+
+        /**
+         * =====================================================
+         * Init function for the fetch button.
+         * =====================================================
+         *
+         * Only meant to be called once.
+         * Only created for structuring purposes.
+         */
+        const InitFetchButton = () => {
+            if (BTN_FETCH_ADDRESS instanceof HTMLButtonElement) {
+                BTN_FETCH_ADDRESS.addEventListener('click', () => {
+                    const customerType = getCustomerType();
+
+                    if (INPUT_GOV_ID instanceof HTMLInputElement && customerType) {
+                        disableWidget(true);
+                        setWidgetFetchingState(true);
+                        fetchAddress(INPUT_GOV_ID.value, customerType)
+                            .then(handleFetchAddressResponse)
+                            .then(handleFetchAddressData)
+                            .then(() => {
+                                disableWidget(false);
+                                setWidgetFetchingState(false);
+                            })
+                            .catch(handleFetchAddressFatalError);
+                    }
+                }, false);
+            }
+        };
+
+        InitCustomerType();
+        InitFetchButton();
+        InitGovIdInput();
+    }());
+</script>

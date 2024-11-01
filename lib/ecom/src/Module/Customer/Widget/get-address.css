@@ -1,0 +1,114 @@
+/**
+ * Copyright © Resurs Bank AB. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+/* Style reset. */
+.rb-customer-widget-getAddress,
+.rb-customer-widget-getAddress * {
+    box-sizing: border-box;
+}
+
+.rb-customer-widget-getAddress {
+    --rb-font: Arial;
+    --rb-fontSize: 16px;
+    --rb-green1: #3AA497;
+    --rb-green2: #236161;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    font-family: var(--rb-font);
+    font-size: var(--rb-fontSize);
+    max-width: 25em;
+}
+
+.rb-customer-widget-getAddress-customerType {
+    display: flex;
+    gap: 1.5em;
+}
+
+.rb-customer-widget-getAddress-customerType label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.rb-customer-widget-getAddress-inputArea {
+    display: flex;
+    gap: 1em;
+}
+
+.rb-customer-widget-getAddress-inputArea button {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.rb-customer-widget-getAddress-fetching .rb-customer-widget-getAddress-fetching-title {
+    visibility: hidden;
+}
+
+.rb-customer-widget-getAddress-inputArea-fetching-icon {
+    position: absolute;
+    display: none;
+    gap: 0.8em;
+}
+
+.rb-customer-widget-getAddress-fetching .rb-customer-widget-getAddress-inputArea-fetching-icon {
+    display: flex;
+}
+
+.rb-customer-widget-getAddress-inputArea-fetching-icon-shard {
+    --Bounce-Duration: 0.6s;
+    --Shard-Size: 0.5em;
+    width: var(--Shard-Size);
+    height: var(--Shard-Size);
+    background-color: rgb(58, 58, 58);
+    border-radius: 100%;
+}
+
+.rb-customer-widget-getAddress-inputArea-fetching-icon-shard:first-child {
+    animation: Rb-Customer-Bounce var(--Bounce-Duration) alternate ease-in-out infinite;
+}
+
+.rb-customer-widget-getAddress-inputArea-fetching-icon-shard:nth-child(2) {
+    transform: translateY(0%);
+    animation: Rb-Customer-Bounce-Prep calc(var(--Bounce-Duration) / 5) 0s 1 linear,
+    Rb-Customer-Bounce var(--Bounce-Duration) calc(var(--Bounce-Duration) / 5)  alternate ease-in-out infinite;
+}
+
+.rb-customer-widget-getAddress-inputArea-fetching-icon-shard:last-child{
+    transform: translateY(100%);
+    animation: Rb-Customer-Bounce-Prep calc(var(--Bounce-Duration) / 2.5) 0s 1 linear,
+    Rb-Customer-Bounce var(--Bounce-Duration) calc(var(--Bounce-Duration) / 2.5)  alternate ease-in-out infinite;
+}
+
+#rb-customer-widget-getAddress-message {
+    color: rgb(90 90 90);
+    font-size: 0.9em;
+}
+
+.rb-customer-widget-getAddress-message-error {
+    color: #fb3b3b !important;
+}
+
+.rb-customer-widget-getAddress-message:empty {
+    display: none;
+}
+
+@keyframes Rb-Customer-Bounce-Prep {
+    100% {
+        transform: translateY(-100%);
+    }
+}
+
+@keyframes Rb-Customer-Bounce{
+    0% {
+        transform: translateY(-100%);
+    }
+
+    100% {
+        transform: translateY(100%);
+    }
+}

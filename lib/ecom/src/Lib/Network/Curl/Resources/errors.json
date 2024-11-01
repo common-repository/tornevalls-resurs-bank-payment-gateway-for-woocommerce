@@ -1,0 +1,23 @@
+[
+  {
+    "id": "customer.mobilePhone is not valid",
+    "translation": {
+      "en": "Mobile phone is not valid",
+      "sv": "Mobiltelefon är ej korrekt"
+    }
+  },
+  {
+    "id": "customer.governmentId is not valid",
+    "translation": {
+      "en": "Government ID is not valid",
+      "sv": "Personnummer är ej korrekt"
+    }
+  },
+  {
+    "id": "customer.email is not valid",
+    "translation": {
+      "en": "Email is not valid",
+      "sv": "Epostadress är ej korrekt"
+    }
+  }
+]

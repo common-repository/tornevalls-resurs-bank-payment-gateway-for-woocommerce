@@ -1,0 +1,14 @@
+parameters:
+    level: 9
+    tipsOfTheDay: false
+    checkGenericClassInNonGenericObjectType: false
+    ignoreErrors:
+        -
+            message: '#.* does not specify type hint for items of its traversable .*#'
+            reportUnmatched: false
+        -
+            message: '#.* no value type specified in iterable type array.*#'
+            reportUnmatched: false
+        -
+            message: '#Cannot access property .* on Resursbank\\Ecom\\Config\|null\.*#'
+            reportUnmatched: false

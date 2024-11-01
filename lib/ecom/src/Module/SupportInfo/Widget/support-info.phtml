@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * Copyright © Resurs Bank AB. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+declare(strict_types=1);
+
+use Resursbank\Ecom\Lib\Locale\Translator;
+
+?>
+
+<style>
+  .rb-si {
+    border-collapse: collapse;
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    flex-direction: column;
+    row-gap: 30px;
+  }
+
+  .rb-si,
+  .rb-si * {
+    box-sizing: border-box;
+  }
+
+  .rb-si td {
+    padding: 15px 10px;
+  }
+
+  .rb-si table {
+    border-collapse: collapse;
+  }
+
+  .rb-si tbody {
+    color: white;
+    border: 1px solid #006464;
+  }
+
+  .rb-si tbody tr:last-child {
+    border-bottom: 1px solid #009b91;
+  }
+
+  .rb-si tbody tr:nth-child(even) {
+    background-color: #006464;
+  }
+
+  .rb-si tbody tr:nth-child(odd) {
+    background-color: #009b91;
+  }
+</style>
+<div class="rb-si">
+  <table>
+    <tbody>
+      <tr>
+        <td><?= Translator::translate(phraseId: 'plugin-version') ?></td>
+        <td><?= $this->pluginVersion ?></td>
+      </tr>
+      <tr>
+        <td><?= Translator::translate(phraseId: 'php-version') ?></td>
+        <td><?= $this->getPhpVersion() ?></td>
+      </tr>
+      <tr>
+        <td><?= Translator::translate(phraseId: 'ecom-version') ?></td>
+        <td><?= $this->getEcomVersion() ?></td>
+      </tr>
+      <tr>
+        <td><?= Translator::translate(phraseId: 'ssl-version') ?></td>
+        <td><?= $this->getSslVersion() ?></td>
+      </tr>
+      <tr>
+        <td><?= Translator::translate(phraseId: 'curl-version') ?></td>
+        <td><?= $this->getCurlVersion() ?></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

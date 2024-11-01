@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * Copyright © Resurs Bank AB. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+declare(strict_types=1);
+
+/** @var PartPayment $this */
+
+use Resursbank\Ecom\Module\PaymentMethod\Widget\PartPayment;
+
+?>
+
+<?php if ($this->iframeUrl !== ''): ?>
+        async function getStartingAtCost(amount) {
+            let url ='<?= $this->apiUrl ?>&amount=' + amount.toString();
+
+            let response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            await response.json().then(resp => {
+                if (typeof resp === 'object' && resp['startingAt']) {
+                    document.getElementById('rb-pp-error').style.display = 'none';
+                    document.getElementById('rb-pp-example').innerHTML = resp.startingAt;
+                } else {
+                    alert('Unable to fetch annuity information');
+                }
+            }).catch(function() {
+                document.getElementById('rb-pp-error').style.display = 'block';
+            });
+        };
+<?php endif; ?>

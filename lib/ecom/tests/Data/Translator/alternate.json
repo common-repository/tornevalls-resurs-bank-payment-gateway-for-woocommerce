@@ -1,0 +1,9 @@
+[
+  {
+    "id": "test-string",
+    "translation": {
+      "en": "This is a test string",
+      "sv": "Det här är en teststräng"
+    }
+  }
+]

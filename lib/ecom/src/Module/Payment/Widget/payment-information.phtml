@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Copyright © Resurs Bank AB. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+declare(strict_types=1);
+
+/** @var PaymentInformation $this */
+/** @psalm-scope-this \Resursbank\Ecom\Module\Payment\Widget\PaymentInformation */
+
+use Resursbank\Ecom\Lib\Locale\Translator;
+use Resursbank\Ecom\Module\Payment\Widget\PaymentInformation;
+
+?>
+
+<div class="rb-pi">
+  <table>
+    <tr>
+      <th colspan="2" class="rb-pi-logo-bg">
+        <span><?= Translator::translate(phraseId: 'payment') ?></span>
+        <span class="rb-pi-logo"><?= $this->logo ?></span>
+      </th>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'payment-id') ?></td>
+      <td><?= $this->payment->id ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'authorized-amount') ?></td>
+      <td><?= $this->getFormattedAmount(amount: $this->payment->order->authorizedAmount) ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'captured-amount') ?></td>
+      <td><?= $this->getFormattedAmount(amount: $this->payment->order->capturedAmount) ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'refunded-amount') ?></td>
+      <td><?= $this->getFormattedAmount(amount: $this->payment->order->refundedAmount) ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'status') ?></td>
+      <td><?= $this->getStatus() ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'payment-method') ?></td>
+      <td><?= $this->getPaymentMethodName() ?></td>
+    </tr>
+    <tr>
+      <th colspan="2"><?= Translator::translate(phraseId: 'customer') ?></th>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'name') ?></td>
+      <td><?= $this->getCustomerName() ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'address') ?></td>
+      <td><?= $this->getAddress() ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'telephone') ?></td>
+      <td><?= $this->getTelephone() ?></td>
+    </tr>
+    <tr>
+      <td class="rb-pi-row-header"><?= Translator::translate(phraseId: 'email') ?></td>
+      <td><?= $this->getEmail() ?></td>
+    </tr>
+  </table>
+</div>

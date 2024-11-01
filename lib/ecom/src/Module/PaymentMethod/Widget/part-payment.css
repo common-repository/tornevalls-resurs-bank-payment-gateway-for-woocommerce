@@ -1,0 +1,69 @@
+/**
+ * Copyright © Resurs Bank AB. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+.rb-pp {
+  font-family: 'ResursSans-Regular', Arial, sans-serif;
+  text-decoration:none;
+}
+
+.rb-pp a:link, .rb-pp a:visited {
+  color:#00a8e6;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+#rb-pp-logo-container svg {
+  height:23px;
+  width:auto;
+}
+
+#rb-pp-background {
+  z-index:999;
+  position:fixed;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  background-color:#000;
+  opacity:0.7;
+}
+
+#rb-pp-hidden {
+  display:none;
+}
+
+.rb-pp-hidden {
+  display:none;
+}
+
+.rb-pp-error {
+  color:#d00;
+}
+
+#rb-pp-iframe-container {
+  z-index:1000;
+  position:fixed;
+  left:50%;
+  top:50%;
+  max-width:95vw;
+  max-height:90vh;
+  transform: translate(-50%, -50%);
+}
+
+#rb-pp-iframe {
+  width:95vw;
+  height:90vh;
+  border:0;
+  -moz-border-radius:2%;
+  -webkit-border-radius:2%;
+  border-radius:2%;
+  overflow:hidden;
+}
+
+@media screen and (min-width: 1280px) {
+  #rb-pp-iframe {
+    width:1214px;
+  }
+}
